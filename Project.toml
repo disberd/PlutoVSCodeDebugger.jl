@@ -1,0 +1,13 @@
+name = "PlutoVSCodeDebugger"
+uuid = "560812a8-17ff-4261-aab5-f8f600b273e2"
+authors = ["Alberto Mengali <disberd@gmail.com>"]
+version = "1.0.0-DEV"
+
+[compat]
+julia = "1.9"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
