@@ -1,7 +1,10 @@
 name = "PlutoVSCodeDebugger"
 uuid = "560812a8-17ff-4261-aab5-f8f600b273e2"
 authors = ["Alberto Mengali <disberd@gmail.com>"]
-version = "1.0.0-DEV"
+version = "0.1.0"
+
+[deps]
+AbstractPlutoDingetjes = "6e696c72-6542-2067-7265-42206c756150"
 
 [compat]
 julia = "1.9"
