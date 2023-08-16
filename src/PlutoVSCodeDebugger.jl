@@ -3,9 +3,17 @@ module PlutoVSCodeDebugger
 using AbstractPlutoDingetjes
 
 
-export @run, @enter, @connect_vscode
+export @run, @enter, @connect_vscode, @vscedit
+
+const BASE_DIR = normpath(Sys.BINDIR, Base.DATAROOTDIR, "julia", "base")
 
 check_pluto() = is_inside_pluto() || (@warn("This package is only intended for use inside of a Pluto notebook, ignoring this command"); false)
+get_vscode() = if isdefined(Main, :VSCodeServer) 
+    Main.VSCodeServer 
+else 
+    error("It seems like VSCodeServer has not been loaded in this notebook.
+Remember to hook VSCode to this notebook by calling the `@connect_vscode` macro.")
+end
 
 # Write your package code here.
 extract_variables!(s::Symbol; _names, _mod) = isdefined(_mod, s) && !isdefined(Main, s) && !isdefined(Base, s) && push!(_names, s)
@@ -70,10 +78,32 @@ function process_expr(command, _mod, _file)
     code
 end
 
-function extract_send_notification()
-    isdefined(Main, :VSCodeServer) || error("It seems like VSCodeServer has not been loaded in this notebook.
-Remember to hook VSCode to this notebook by calling the `@connect_vscode` macro.")
-    f = (args...) -> Main.VSCodeServer.JSONRPC.send_notification(Main.VSCodeServer.conn_endpoint[], args...)
+function method_location(m::Method)
+    file = string(m.file)
+    path = m.module === Base ? joinpath(BASE_DIR, file) : file
+    return path, Int(m.line)
+end
+
+function open_file_vscode(path::String, line::Int)
+    VSCodeServer = get_vscode()
+    (; JSONRPC, conn_endpoint, repl_open_file_notification_type) = VSCodeServer
+    JSONRPC.send(conn_endpoint[], repl_open_file_notification_type, (; path, line))
+    nothing
+end
+function open_file_vscode(m::Method)
+    if m.module === Core
+        @info "The method `$(m.name)` is defined in Core, so it has no associated file."
+        return
+    end
+    path, line = method_location(m)
+    open_file_vscode(path, line)
+end
+open_file_vscode(v::Base.MethodList) = open_file_vscode(first(v))
+
+function send_to_debugger(method; code, filename)
+    VSCodeServer = get_vscode()
+    (; JSONRPC, conn_endpoint) = VSCodeServer
+    JSONRPC.send_notification(conn_endpoint[], method, (; code, filename))
 end
 
 macro connect_vscode(block)
@@ -88,15 +118,29 @@ end
 macro run(command)
     check_pluto() || return nothing
     code = process_expr(command, __module__, __source__.file)
-    send_notification = extract_send_notification()
-    :($send_notification("debugger/run", (code = $(string(code)), filename = $(string(__source__.file)))))
+    :($send_to_debugger("debugger/run", code = $(string(code)), filename = $(string(__source__.file))))
 end
 
 macro enter(command)
     check_pluto() || return nothing
     code = process_expr(command, __module__, __source__.file)
-    send_notification = extract_send_notification()
-    :($send_notification("debugger/enter", (code = $(string(code)), filename = $(string(__source__.file)))))
+    :($send_to_debugger("debugger/enter", code = $(string(code)), filename = $(string(__source__.file))))
+end
+
+macro vscedit(funcall::Expr)
+    head = funcall.head
+    if head === :call
+        fname, fargs... = funcall.args
+        :($open_file_vscode(methods($fname, typeof.($fargs)))) |> esc
+    elseif head === :macrocall
+        mname, ln, margs... = funcall.args
+        types = (LineNumberNode, Module, typeof.(margs)...)
+        :($open_file_vscode(methods($mname, $types))) |> esc
+    else
+        error("You have to provide a function call to the `@vscedit` macro.")
+    end
 end
 
 end
+
+
