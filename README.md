@@ -18,6 +18,10 @@ After executing the cell with `@connect_vscode` you should see a popup on VSCode
 After succesfull connection you can directly start using the `@enter` and
 `@run` macros inside your Pluto notebook.
 
+You can also use the exported @vscedit to jump at function definitions
+in VSCode from the Pluto notebook for convenience of setting up breakpoints.
+This function works similarly to the `@edit` macro from InteractiveUtils.
+
 ## Note
 The current code is not very convenient to debug code functions that are defined
 within the notebook, simply because it's not possible to put breakpoints inside
