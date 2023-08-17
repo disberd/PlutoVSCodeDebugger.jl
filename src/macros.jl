@@ -29,7 +29,12 @@ macro connect_vscode(block)
     You have to provide the VSCode External REPL command surrounded by a begin-end block to avoid macro parsing problems.")
     # We execute the command in Main
     Base.eval(Main, block)
-    "VSCode succesfully connected"
+    try
+        get_vscode()
+        "VSCode succesfully connected"
+    catch
+        "The provided command does not seem to have loaded VSCode correctly."
+    end
 end
 
 """
