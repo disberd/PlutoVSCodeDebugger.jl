@@ -31,3 +31,20 @@ the lines but it might be tedious to reach deeply nested functions in this way.
 For what concerns code that is imported in the notebook either from other
 packages or by including files, breakpoints can be added on VSCode and are
 reached correctly when using the `@run` or `@enter` macro.
+
+## Examples
+
+### Connecting VSCode
+https://github.com/disberd/PlutoVSCodeDebugger.jl/assets/12846528/02341cfb-9d89-4528-96dc-ebac3f05b0d6
+
+### Debugging code of imported Package
+https://github.com/disberd/PlutoVSCodeDebugger.jl/assets/12846528/9b1af23f-dfe1-4a4b-b7e2-b1092c36be99
+
+### Debugging code of directly included files
+https://github.com/disberd/PlutoVSCodeDebugger.jl/assets/12846528/4da1a4ed-38cd-4f41-a5e2-6fef5f68280a
+
+### Debugging code defined in notebook
+https://github.com/disberd/PlutoVSCodeDebugger.jl/assets/12846528/12443203-0415-4269-8117-5dfa98169a9d
+
+
+
