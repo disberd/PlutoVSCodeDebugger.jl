@@ -12,7 +12,10 @@ To connect VSCode to Pluto and exploit the `@run` and `@enter` commands, follow 
 - Bring this package into the notebook scope by having a cell with `using PlutoVSCodeDebugger`
 - Connect VSCode by calling the `@connect_vscode` macro by giving as an argument a `begin...end` block that contains the code pasted at point 1.
 
-After doing the three steps above, you can directly start using the `@enter` and
+After executing the cell with `@connect_vscode` you should see a popup on VSCode like the one below confirming the successfull connection:
+![image](https://github.com/disberd/PlutoVSCodeDebugger.jl/assets/12846528/c60af7a2-2eb6-47a7-973f-1074da41be88)
+
+After succesfull connection you can directly start using the `@enter` and
 `@run` macros inside your Pluto notebook.
 
 ## Note
