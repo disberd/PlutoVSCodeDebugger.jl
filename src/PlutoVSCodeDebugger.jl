@@ -44,7 +44,9 @@ function remove_problematic_macros!(ex::Expr; _mod, _file)
         elseif macro_name === "@__MODULE__"
             args[i] = _mod
         else
-            remove_problematic_macros!(arg; _mod, _file)
+            error("Running the debugger on code containing a macro is currently not supported.
+            It hangs the debugger before it starts, requiring a reload of VSCode and a reconnection with the notebook.")
+            # remove_problematic_macros!(arg; _mod, _file)
         end
     end
     return ex
@@ -78,6 +80,7 @@ function process_expr(command, _mod, _file)
     code
 end
 
+# Open File
 function method_location(m::Method)
     file = string(m.file)
     path = m.module === Base ? joinpath(BASE_DIR, file) : file
@@ -99,6 +102,8 @@ function open_file_vscode(m::Method)
     open_file_vscode(path, line)
 end
 open_file_vscode(v::Base.MethodList) = open_file_vscode(first(v))
+open_file_vscode(f::Function) = open_file_vscode(methods(f))
+open_file_vscode(x) = error("The provided type $(typeof(x)) is not a valid input for `open_file_vscode`")
 
 function send_to_debugger(method; code, filename)
     VSCodeServer = get_vscode()
@@ -106,6 +111,7 @@ function send_to_debugger(method; code, filename)
     JSONRPC.send_notification(conn_endpoint[], method, (; code, filename))
 end
 
+# Macros
 macro connect_vscode(block)
     check_pluto() || return nothing
     Meta.isexpr(block, (:block)) || error("Please wrap the code copied from VSCode into a begin-end block.
@@ -127,18 +133,26 @@ macro enter(command)
     :($send_to_debugger("debugger/enter", code = $(string(code)), filename = $(string(__source__.file))))
 end
 
-macro vscedit(funcall::Expr)
-    head = funcall.head
-    if head === :call
-        fname, fargs... = funcall.args
-        :($open_file_vscode(methods($fname, typeof.($fargs)))) |> esc
+function vscedit(ex::Expr)
+    head = ex.head
+    open_args = if head === :call
+        fname, fargs... = ex.args
+        :(methods(($fname, typeof.($fargs))...))
     elseif head === :macrocall
-        mname, ln, margs... = funcall.args
-        types = (LineNumberNode, Module, typeof.(margs)...)
-        :($open_file_vscode(methods($mname, $types))) |> esc
+        mname, ln, margs... = ex.args
+        type = (LineNumberNode, Module, typeof.(margs)...)
+        :(methods(($mname, $types)...))
+    elseif head === :.
+        :($ex)
     else
         error("You have to provide a function call to the `@vscedit` macro.")
     end
+    :($open_file_vscode($open_args))
+end
+vscedit(fname::Symbol) = :($open_file_vscode($fname))
+
+macro vscedit(ex)
+   vscedit(ex) |> esc
 end
 
 end

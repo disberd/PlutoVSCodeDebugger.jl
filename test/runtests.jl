@@ -1,5 +1,5 @@
 using PlutoVSCodeDebugger
-using PlutoVSCodeDebugger: process_expr, check_pluto, send_to_debugger, open_file_vscode
+using PlutoVSCodeDebugger: process_expr, check_pluto, send_to_debugger, open_file_vscode, method_location
 using Test
 
 module VSCodeServer
@@ -29,4 +29,6 @@ end
     m = first(mets)
     @test send_to_debugger(m; code = "3+2", filename = "asd") === nothing
     @test open_file_vscode(mets) === nothing
+
+    @test method_location(first(methods(getfield))) === ("", 0) # This is in Core so it has no file/line
 end
