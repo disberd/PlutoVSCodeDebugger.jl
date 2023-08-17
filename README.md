@@ -36,6 +36,7 @@ packages or by including files, breakpoints can be added on VSCode and are
 reached correctly when using the `@run` or `@enter` macro.
 
 ## Examples
+The following example videos are recordings from the execution of the notebook found in [examples/test_notebook.jl](https://github.com/disberd/PlutoVSCodeDebugger.jl/blob/main/examples/test_notebook.jl)
 
 ### Connecting VSCode
 https://github.com/disberd/PlutoVSCodeDebugger.jl/assets/12846528/02341cfb-9d89-4528-96dc-ebac3f05b0d6
