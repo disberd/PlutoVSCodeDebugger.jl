@@ -14,7 +14,10 @@ point 1 inside a `begin - end` block passed to the `@connect_vscode` macro, like
 shown in the call signature at the top of this docstring. 
 - Execute the cell containing `@connect_vscode`.
 
-Once the connection is established, you should see a popup in VSCode confirming this.
+Once the connection is established, you should see a popup in VSCode like the
+one below confirming this.
+
+![image](https://github.com/disberd/PlutoVSCodeDebugger.jl/assets/12846528/c60af7a2-2eb6-47a7-973f-1074da41be88)
 
 You can now use [`@enter`](@ref) or [`@run`](@ref) to debug function called in
 the notebook workspace exploiting the VSCode debugger.
