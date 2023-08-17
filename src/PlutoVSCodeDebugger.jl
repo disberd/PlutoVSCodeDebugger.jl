@@ -7,12 +7,14 @@ export @run, @enter, @connect_vscode, @vscedit
 
 const BASE_DIR = normpath(Sys.BINDIR, Base.DATAROOTDIR, "julia", "base")
 
+clean_err(msg) = error(replace(msg, r"\n[\t ]+" => "\n")) # Remove whitespace after newline
+
 check_pluto() = is_inside_pluto() || (@warn("This package is only intended for use inside of a Pluto notebook, ignoring this command"); false)
 get_vscode() = if isdefined(Main, :VSCodeServer) 
     Main.VSCodeServer 
 else 
-    error("It seems like VSCodeServer has not been loaded in this notebook.
-Remember to hook VSCode to this notebook by calling the `@connect_vscode` macro.")
+    clean_err("It seems like VSCodeServer has not been loaded in this notebook.
+    Remember to hook VSCode to this notebook by calling the `@connect_vscode` macro.")
 end
 
 # Write your package code here.
@@ -28,12 +30,17 @@ function extract_variables!(ex::Expr; kwargs...)
 end
 
 remove_problematic_macros!(x; kwargs...) = nothing
-function remove_problematic_macros!(ex::Expr; _mod, _file)
+function remove_problematic_macros!(ex::Expr; wrapped = false, _mod, _file)
+    if !wrapped 
+        # We wrap the first expression as we only process the args
+        nex = remove_problematic_macros!(Expr(:wrapped, ex); wrapped = true, _mod, _file)
+        return first(nex.args)
+    end
     args = ex.args
     for i in eachindex(args)
         arg = args[i]
         if !Meta.isexpr(arg, :macrocall) 
-            remove_problematic_macros!(arg; _mod, _file)
+            remove_problematic_macros!(arg; wrapped, _mod, _file)
             continue
         end
         macro_name = arg.args[1] |> string
@@ -44,7 +51,7 @@ function remove_problematic_macros!(ex::Expr; _mod, _file)
         elseif macro_name === "@__MODULE__"
             args[i] = _mod
         else
-            error("Running the debugger on code containing a macro is currently not supported.
+            clean_err("Running the debugger on code containing a macro is currently not supported.
             It hangs the debugger before it starts, requiring a reload of VSCode and a reconnection with the notebook.")
             # remove_problematic_macros!(arg; _mod, _file)
         end
@@ -114,8 +121,8 @@ end
 # Macros
 macro connect_vscode(block)
     check_pluto() || return nothing
-    Meta.isexpr(block, (:block)) || error("Please wrap the code copied from VSCode into a begin-end block.
-You have to provide the VSCode External REPL command surrounded by a begin-end block to avoid macro parsing problems.")
+    Meta.isexpr(block, (:block)) || clean_err("Please wrap the code copied from VSCode into a begin-end block.
+    You have to provide the VSCode External REPL command surrounded by a begin-end block to avoid macro parsing problems.")
     # We execute the command in Main
     Base.eval(Main, block)
     "VSCode succesfully connected"
@@ -137,11 +144,11 @@ function vscedit(ex::Expr)
     head = ex.head
     open_args = if head === :call
         fname, fargs... = ex.args
-        :(methods(($fname, typeof.($fargs))...))
+        :(methods($fname, typeof.($fargs)))
     elseif head === :macrocall
         mname, ln, margs... = ex.args
-        type = (LineNumberNode, Module, typeof.(margs)...)
-        :(methods(($mname, $types)...))
+        types = (LineNumberNode, Module, typeof.(margs)...)
+        :(methods($mname, $types))
     elseif head === :.
         :($ex)
     else
