@@ -18,10 +18,11 @@ using Test
     @test get_vscode() === Main.VSCodeServer
 
     file = @__FILE__
-    ex = :(my_func(@__FILE__, a.b))
-    s = string(process_expr(ex, @__MODULE__, file))
+    ex = :(my_func(a.b, @__FILE__))
+    nex = process_expr(ex, @__MODULE__, file)
+    s = string(nex)
     @test !contains(s, "@__FILE__")
-    @test contains(s, file)
+    @test last(nex.args) === file
 
     ex = :(my_func(@__MODULE__))
     s = string(process_expr(ex, @__MODULE__, file))
