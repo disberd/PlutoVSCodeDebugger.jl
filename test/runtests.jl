@@ -18,7 +18,7 @@ using Test
     @test get_vscode() === Main.VSCodeServer
 
     file = @__FILE__
-    ex = :(my_func(@__FILE__))
+    ex = :(my_func(@__FILE__, a.b))
     s = string(process_expr(ex, @__MODULE__, file))
     @test !contains(s, "@__FILE__")
     @test contains(s, file)
