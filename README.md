@@ -1,6 +1,7 @@
 # PlutoVSCodeDebugger
 
 [![Build Status](https://github.com/disberd/PlutoVSCodeDebugger.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/disberd/PlutoVSCodeDebugger.jl/actions/workflows/CI.yml?query=branch%3Amain)
+[![Coverage](https://codecov.io/gh/disberd/PlutoVSCodeDebugger.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/disberd/PlutoVSCodeDebugger.jl)
 
 This package provides a very experimental connection between a Pluto Notebook
 and the Debugger on a running VSCode instance (the VSCode instance must be
