@@ -45,8 +45,8 @@ using Test
     @test method_location(first(methods(getfield))) === ("", 0) # This is in Core so it has no file/line
 
     @test vscedit(:s) == :($open_file_vscode(s))
-    fcalltest = :(asd(3))
-    @test vscedit(fcalltest) == :($open_file_vscode(methods(asd, typeof.($(fcalltest.args[2:end])))))
+    fcalltest = :(a + 2)
+    @test vscedit(fcalltest) == :($open_file_vscode(methods(+, typeof.((a, 2)))))
     mcalltest = :(@asd(3))
     @test vscedit(mcalltest) == :($open_file_vscode(methods($(mcalltest.args[1]), $((LineNumberNode, Module, typeof(mcalltest.args[end]))))))
     fnametest = :(VSCodeServer.JSONRPC.send_notification)

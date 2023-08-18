@@ -113,7 +113,7 @@ function vscedit(ex::Expr)
     head = ex.head
     open_args = if head === :call
         fname, fargs... = ex.args
-        :(methods($fname, typeof.($fargs)))
+        :(methods($fname, typeof.(($(fargs...),))))
     elseif head === :macrocall
         mname, ln, margs... = ex.args
         types = (LineNumberNode, Module, typeof.(margs)...)
