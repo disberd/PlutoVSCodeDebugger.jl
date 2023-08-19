@@ -1,5 +1,5 @@
 using PlutoVSCodeDebugger
-using PlutoVSCodeDebugger: process_expr, check_pluto, send_to_debugger, open_file_vscode, method_location, vscedit, get_vscode, clean_err
+using PlutoVSCodeDebugger: process_expr, check_pluto, send_to_debugger, open_file_vscode, method_location, vscedit, get_vscode, clean_err, _connect_vscode
 using Test
 
 
@@ -11,7 +11,7 @@ using Test
             send(args...) = nothing
             send_notification(args...) = nothing
         end
-        conn_endpoint = Ref(nothing)
+        conn_endpoint = Ref(IOBuffer())
         repl_open_file_notification_type = nothing
     end))
 
@@ -52,4 +52,8 @@ using Test
     fnametest = :(VSCodeServer.JSONRPC.send_notification)
     @test vscedit(fnametest) == :($open_file_vscode($fnametest))
 
+    @test _connect_vscode(:(begin end); skip_pluto_check = true) === "VSCode succesfully connected!"
+    @test contains(_connect_vscode(; skip_pluto_check = true).args[end], "CodeMirror?.setValue")
+    close(get_vscode().conn_endpoint[])
+    @test_throws "Consider re-doing the connection" _connect_vscode(:(begin end); skip_pluto_check = true)
 end

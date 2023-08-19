@@ -26,18 +26,13 @@ You can also use the exported [`@vscedit`](@ref) to jump at function definitions
 in VSCode from the Pluto notebook for convenience of setting up breakpoints.
 This function works similarly to the `@edit` macro from InteractiveUtils.
 """
-macro connect_vscode(block)
-    check_pluto() || return nothing
-    Meta.isexpr(block, (:block)) || clean_err("Please wrap the code copied from VSCode into a begin-end block.
-    You have to provide the VSCode External REPL command surrounded by a begin-end block to avoid macro parsing problems.")
-    # We execute the command in Main
-    Base.eval(Main, block)
-    try
-        get_vscode()
-        "VSCode succesfully connected"
-    catch
-        "The provided command does not seem to have loaded VSCode correctly."
-    end
+macro connect_vscode(args...)
+    _connect_vscode(args...)
+end
+
+macro bp()
+    JuliaInterpreter = get_vscode().JuliaInterpreter
+    :($JuliaInterpreter.@bp)
 end
 
 """
