@@ -80,11 +80,15 @@ end
 const JULIAINTERPRETER_METHODS = (:breakpoint, :breakpoints, :enable, :disable, :toggle, :remove)
 
 for f in JULIAINTERPRETER_METHODS
+    pre_args = if f === :breakpoint
+        (:(file::AbstractString), :(line::Int))
+    else
+        ()
+    end
     eval(quote
-        export $f
-        function $f(args...)
+        function $f($(pre_args...),args...)
             I = get_vscode(:JuliaInterpreter)
-            I.$f(args...)
+            I.$f($(pre_args...), args...)
         end
     end)
 end
