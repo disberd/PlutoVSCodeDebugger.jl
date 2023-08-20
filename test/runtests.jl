@@ -1,4 +1,4 @@
-using PlutoVSCodeDebugger
+using PlutoVSCodeDebugger.WithFunctions
 using PlutoVSCodeDebugger: process_expr, check_pluto, send_to_debugger,
 open_file_vscode, method_location, vscedit, get_vscode, clean_err,
 connect_vscode, JULIAINTERPRETER_METHODS, has_docstring, maybe_add_docstrings
