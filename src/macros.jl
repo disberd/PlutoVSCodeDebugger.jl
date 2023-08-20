@@ -27,7 +27,7 @@ in VSCode from the Pluto notebook for convenience of setting up breakpoints.
 This function works similarly to the `@edit` macro from InteractiveUtils.
 """
 macro connect_vscode(args...)
-    _connect_vscode(args...)
+    connect_vscode(args...)
 end
 
 macro bp()
