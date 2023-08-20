@@ -74,3 +74,17 @@ function send_to_debugger(method; code, filename)
     (; JSONRPC, conn_endpoint) = VSCodeServer
     JSONRPC.send_notification(conn_endpoint[], method, (; code, filename))
 end
+
+## JuliaInterpreter methods
+
+const JULIAINTERPRETER_METHODS = (:breakpoint, :breakpoints, :enable, :disable, :toggle, :remove)
+
+for f in JULIAINTERPRETER_METHODS
+    eval(quote
+        export $f
+        function $f(args...)
+            I = get_vscode(:JuliaInterpreter)
+            I.$f(args...)
+        end
+    end)
+end

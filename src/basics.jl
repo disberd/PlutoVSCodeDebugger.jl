@@ -35,6 +35,27 @@ function maybe_clean_vscode_module(; close_endpoint = true)
     end
 end
 
+function has_docstring(docstr::AbstractString)
+    !startswith(docstr, "No documentation found.")
+end
+has_docstring(md::Markdown.MD) = has_docstring(string(md))
+has_docstring(args...) = has_docstring(get_docstring(args...))
+
+
+get_docstring(args...) = REPL.doc(args...)
+get_docstring(s::Symbol, args...) = get_docstring(Docs.Binding(@__MODULE__, s), args...)
+
+
+function maybe_add_docstrings()
+    # We now add docstrings to the JuliaInterpreter methods
+    JI = get_vscode(:JuliaInterpreter)
+    for f in JULIAINTERPRETER_METHODS
+        has_docstring(f) && continue
+        JI_docstr = get_docstring(Docs.Binding(JI, f))
+        Base.eval(@__MODULE__,:(@doc $JI_docstr $f(::Vararg)))
+    end
+end
+
 function connect_vscode(block; skip_pluto_check = false)
     skip_pluto_check || check_pluto() || return nothing
     Meta.isexpr(block, (:block)) || clean_err("Please wrap the code copied from VSCode into a begin-end block.
@@ -43,12 +64,14 @@ function connect_vscode(block; skip_pluto_check = false)
     maybe_clean_vscode_module()
     # We execute the command in Main
     Base.eval(Main, block)
-    try
+    out = try
         get_vscode()
         "VSCode succesfully connected!"
     catch
         rethrow()
     end
+    maybe_add_docstrings()
+    return out
 end
 # This function just rewrite the cell input to contain a begin end block
 function connect_vscode(; skip_pluto_check = false)

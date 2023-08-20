@@ -1,5 +1,7 @@
 using PlutoVSCodeDebugger
-using PlutoVSCodeDebugger: process_expr, check_pluto, send_to_debugger, open_file_vscode, method_location, vscedit, get_vscode, clean_err, _connect_vscode
+using PlutoVSCodeDebugger: process_expr, check_pluto, send_to_debugger,
+open_file_vscode, method_location, vscedit, get_vscode, clean_err,
+connect_vscode, JULIAINTERPRETER_METHODS, has_docstring, maybe_add_docstrings
 using Test
 
 
@@ -7,6 +9,8 @@ using Test
     @test_throws "has not been loaded" get_vscode()
 
     Base.eval(Main, :(module VSCodeServer
+
+        import JuliaInterpreter
         module JSONRPC
             send(args...) = nothing
             send_notification(args...) = nothing
@@ -16,6 +20,9 @@ using Test
     end))
 
     @test get_vscode() === Main.VSCodeServer
+
+    V = get_vscode()
+    endpoint = V.conn_endpoint
 
     file = @__FILE__
     ex = :(my_func(a.b, @__FILE__))
@@ -52,8 +59,15 @@ using Test
     fnametest = :(VSCodeServer.JSONRPC.send_notification)
     @test vscedit(fnametest) == :($open_file_vscode($fnametest))
 
-    @test _connect_vscode(:(begin end); skip_pluto_check = true) === "VSCode succesfully connected!"
-    @test contains(_connect_vscode(; skip_pluto_check = true).args[end], "CodeMirror?.setValue")
-    close(get_vscode().conn_endpoint[])
-    @test_throws "Consider re-doing the connection" _connect_vscode(:(begin end); skip_pluto_check = true)
+    @test isempty(breakpoints())
+    breakpoint(@__FILE__, 61)
+    @test !isempty(breakpoints())
+
+    @test all(x -> !has_docstring(getfield(PlutoVSCodeDebugger, x)), JULIAINTERPRETER_METHODS)
+    @test connect_vscode(:(begin VSCodeServer.conn_endpoint[] = IOBuffer() end); skip_pluto_check = true) === "VSCode succesfully connected!"
+    @test all(x -> has_docstring(getfield(PlutoVSCodeDebugger, x)), JULIAINTERPRETER_METHODS)
+    @test isempty(breakpoints()) # The connect call above should have reset JuliaInterpreter
+    @test contains(connect_vscode(; skip_pluto_check = true).args[end], "CodeMirror?.setValue")
+    close(endpoint[])
+    @test_throws "Consider re-doing the connection" connect_vscode(:(begin end); skip_pluto_check = true)
 end

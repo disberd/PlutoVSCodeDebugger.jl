@@ -1,9 +1,11 @@
 module PlutoVSCodeDebugger
 
 using AbstractPlutoDingetjes
-
+import REPL
+import Markdown
 
 export @run, @enter, @connect_vscode, @vscedit, @bp
+export breakpoint, breakpoints, remove
 
 const BASE_DIR = normpath(Sys.BINDIR, Base.DATAROOTDIR, "julia", "base")
 
