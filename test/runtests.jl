@@ -1,12 +1,13 @@
 using PlutoVSCodeDebugger.WithFunctions
 using PlutoVSCodeDebugger: process_expr, check_pluto, send_to_debugger,
 open_file_vscode, method_location, vscedit, get_vscode, clean_err,
-connect_vscode, JULIAINTERPRETER_METHODS, has_docstring, maybe_add_docstrings
+connect_vscode, JULIAINTERPRETER_METHODS, has_docstring, maybe_add_docstrings, maybe_clean_vscode_module
 using Test
 
 
 @testset "PlutoVSCodeDebugger.jl" begin
     @test_throws "has not been loaded" get_vscode()
+    @test maybe_clean_vscode_module() === nothing # Goes on catch branch
 
     Base.eval(Main, :(module VSCodeServer
 
@@ -18,6 +19,8 @@ using Test
         conn_endpoint = Ref(IOBuffer())
         repl_open_file_notification_type = nothing
     end))
+
+    @test maybe_clean_vscode_module(; close_endpoint = false) === nothing # Goes on else branch
 
     @test get_vscode() === Main.VSCodeServer
 
