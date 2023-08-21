@@ -61,6 +61,10 @@ So, when ran with the following example code:
 ```
 This macro will simply throw an error because the code to run directly contains another macro.
 
+Support for direct macro calls seem to be broken in VSCode directly. See
+[Issue 2710](https://github.com/julia-vscode/julia-vscode/issues/2710) on the
+julia-vscode extension.
+
 ## Setting breakpoints
 Breakpoints set in VSCode will be respected by the `@run` macro, exactly like it would happen in VSCode.
 To simplify reaching the file position associated to a given function/method to
@@ -99,6 +103,10 @@ So, when ran with the following example code:
 @enter @othermacro args...
 ```
 This macro will simply throw an error because the code to run directly contains another macro.
+
+Support for direct macro calls seem to be broken in VSCode directly. See
+[Issue 2710](https://github.com/julia-vscode/julia-vscode/issues/2710) on the
+julia-vscode extension.
 
 See also: [`@connect_vscode`](@ref), [`@run`](@ref), [`@vscedit`](@ref)
 """
