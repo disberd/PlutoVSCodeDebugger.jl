@@ -1,6 +1,8 @@
 ### A Pluto.jl notebook ###
 # v0.19.26
 
+#> custom_attrs = ["hide-enabled"]
+
 using Markdown
 using InteractiveUtils
 
@@ -12,18 +14,53 @@ end
 
 # ╔═╡ bd6394e1-ca2b-4079-8b3a-710cef6b4dda
 @fromparent begin
-	using PackageModule.WithFunctions # This just use the parent module (PlutoVSCodeDebugger)
+	using PackageModule.WithFunctions # The WithFunction submodule of PlutoVSCodeDebugger will also export the breakpoint related functions from JuliaInterpreter
 end
 
-# ╔═╡ bd4e372c-49ba-49a8-bab2-e056ccab6fc4
-include("included_file.jl") # This simply brings `included_function` into scope
+# ╔═╡ b0eb2aa1-f60e-49bf-b057-38c0ed002366
+md"""
+# Packages
+"""
+
+# ╔═╡ 76348a39-7dcb-4703-ba60-263fa84eae90
+ExtendedTableOfContents()
+
+# ╔═╡ 19bddf77-7f36-40de-ac63-696aaf87556b
+md"""
+## Load PlutoVSCodeDebugger
+"""
+
+# ╔═╡ fcec92a1-d776-462d-b25d-839d145d6594
+md"""
+# Usage Examples
+"""
+
+# ╔═╡ b8a055a9-7de3-48d3-9184-58e7bf432417
+md"""
+## Connect VSCode Instance
+"""
+
+# ╔═╡ 48c7f30a-4f10-41aa-a3d6-740cfc3ad2c7
+md"""
+Connecting to a running vscode instance is done via the `@connect_vscode` macro. The macro expects a single begin-end block containing the connection command copied from VSCode.
+
+When executed with no argument, the macro will simply modify its cell to include the begin-end block for convenience.
+"""
 
 # ╔═╡ 68f705bb-9c8f-4eae-8a52-a390a3568152
 # @connect_vscode
 
 # ╔═╡ 0cbfd57c-16f6-44b3-9983-44cb5802b88c
 md"""
-## Debug code inside a package
+## Debug package code
+"""
+
+# ╔═╡ b5bde02b-d4b3-43bc-b467-a5850d024a9f
+md"""
+To debug code defined inside a package loaded within Pluto the workflow is very straightforward. One sets breakpoints in the connected VSCode and those are hit when using the `@run` macro.
+
+To simplify opening up the desired file location associated to a method or function, one can use the `@vscedit` macro directly from the notebook. This will open the file location associated to the provided function or method in the connected VSCode instance.\
+The synthax of `@vscedit` is very similar to `@edit` from InteractiveUtils, but check the docstrings for more information.
 """
 
 # ╔═╡ 0c15167b-98e2-499d-bf5e-470994553f91
@@ -34,20 +71,37 @@ md"""
 
 # ╔═╡ 49e6883f-4229-4225-bc05-3f97be286ae5
 md"""
-## Debug code directly included from a file
+## Debug included code
 """
 
+# ╔═╡ 9ac85b1b-9e76-4da6-a5ee-50ab5732c8e1
+md"""
+Debugging code that is directly included in the notebook with `include` also works equivalently to code defined inside a package.
+"""
+
+# ╔═╡ bd4e372c-49ba-49a8-bab2-e056ccab6fc4
+module IncludeModule
+	include("included_file.jl") # This simply brings `included_function` into scope
+end
+
 # ╔═╡ b2322d22-c92d-4092-8a64-6ca2284beb77
-# @vscedit included_function(1) # This open a file in directly included in the notebook
+# @vscedit IncludeModule.included_function(1) # This opens the `included_file.jl` file
 
 # ╔═╡ d3f48772-e700-4978-a03a-d6621cf44de9
-# @run included_function(1)
+# @run IncludeModule.included_function(1)
 
 # ╔═╡ 6d5e95b6-2223-4dd0-acd5-22b4ef6ae980
 md"""
-## Debug code defined in the notebook
-Debugging code defined inside the notebook is more tricky because you can not put breakpoints inside the function.
-The only way to do it is by usint the `@enter` macro and stepping manually
+## Debug notebook code
+"""
+
+# ╔═╡ 089cbc8a-0f12-478a-beda-9f8144d823ef
+md"""
+Debugging code defined inside the notebook can not be done by adding breakpoint markers in the notebook file in VSCode.
+
+This is because Pluto internally modifies the LineNumbers of expression associated to the notebook code so a breakpoint added on the notebook file on VSCode will not be triggered when executing code from Pluto.
+
+While not as convenient as setting breakpoints using the VSCode UI, one can still manually set breakpoint either by inserting the `@bp` macro in function definitions or by using the `@breakpoint` macro with a call signature.
 """
 
 # ╔═╡ 16e0a5ba-3571-4c58-9f57-8def8d57154a
@@ -59,25 +113,30 @@ function outer_notebook_function(x)
 end
 function inner_notebook_function(x)
 	C = x+1
-	D = C / 10 # breakpoint set with @breakpoint will stop at this line (10)
+	D = C / 10
 	return inner_inner_notebook_function(x)
 end
 function inner_inner_notebook_function(x)
 	if x < 15
-		@bp
+		@bp # This inserts a manual breakpoint
 	end
 	x+2
 end
 end
 
+# ╔═╡ 615a2e70-d714-49d0-98b6-60b951db1011
+md"""
+The cell below will set a breakpoint in the function at line 10 (the return statement) that will stop only if ``x > 10`` (``x`` is the name of the input argument)
+"""
+
 # ╔═╡ 6443c783-b6fb-4ce2-bfef-91c183c39c12
-# @breakpoint inner_notebook_function(3) 10 x > 15
+@breakpoint inner_notebook_function(3) 10 x > 15
 
 # ╔═╡ 68c956ef-aebc-4f80-96ad-6a3c0be6bdff
-# @run outer_notebook_function(10) # This will stop at @bp but not at @breakpoint
+@run outer_notebook_function(10) # This will stop at @bp but not at @breakpoint
 
 # ╔═╡ cb46fdb3-41f4-4b51-ac5d-72e6b853b0be
-# @run outer_notebook_function(20) # This will stop at @breakpoint but not at @bp
+@run outer_notebook_function(20) # This will stop at @breakpoint but not at @bp
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -376,18 +435,28 @@ version = "17.4.0+0"
 """
 
 # ╔═╡ Cell order:
+# ╟─b0eb2aa1-f60e-49bf-b057-38c0ed002366
 # ╠═28fa6890-3ce9-11ee-36bd-6371c1775e91
+# ╠═76348a39-7dcb-4703-ba60-263fa84eae90
+# ╟─19bddf77-7f36-40de-ac63-696aaf87556b
 # ╠═bd6394e1-ca2b-4079-8b3a-710cef6b4dda
+# ╟─fcec92a1-d776-462d-b25d-839d145d6594
+# ╟─b8a055a9-7de3-48d3-9184-58e7bf432417
+# ╟─48c7f30a-4f10-41aa-a3d6-740cfc3ad2c7
 # ╠═68f705bb-9c8f-4eae-8a52-a390a3568152
 # ╟─0cbfd57c-16f6-44b3-9983-44cb5802b88c
+# ╟─b5bde02b-d4b3-43bc-b467-a5850d024a9f
 # ╠═0c15167b-98e2-499d-bf5e-470994553f91
 # ╠═b8f82bc0-db2e-410c-98af-3d7f2251c526
 # ╟─49e6883f-4229-4225-bc05-3f97be286ae5
+# ╟─9ac85b1b-9e76-4da6-a5ee-50ab5732c8e1
 # ╠═bd4e372c-49ba-49a8-bab2-e056ccab6fc4
 # ╠═b2322d22-c92d-4092-8a64-6ca2284beb77
 # ╠═d3f48772-e700-4978-a03a-d6621cf44de9
 # ╟─6d5e95b6-2223-4dd0-acd5-22b4ef6ae980
+# ╠═089cbc8a-0f12-478a-beda-9f8144d823ef
 # ╠═16e0a5ba-3571-4c58-9f57-8def8d57154a
+# ╟─615a2e70-d714-49d0-98b6-60b951db1011
 # ╠═6443c783-b6fb-4ce2-bfef-91c183c39c12
 # ╠═68c956ef-aebc-4f80-96ad-6a3c0be6bdff
 # ╠═cb46fdb3-41f4-4b51-ac5d-72e6b853b0be
