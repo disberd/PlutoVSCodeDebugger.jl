@@ -1,5 +1,7 @@
 # Quick Start
-Here are a few example videos showing how to set up and use PlutoVSCodeDebugger for debugging
+Here are a few example videos showing how to set up and use PlutoVSCodeDebugger for debugging. 
+
+All of the videos below are recording of code execution from the example notebook found at [examples/test_notebook.jl](https://github.com/disberd/PlutoVSCodeDebugger.jl/blob/d1a410615fc16945173160aa4353887b534d8405/examples/test_notebook.jl)
 
 ## Connecting to VSCode
 Connecting to a running vscode instance is done via the [`@connect_vscode`](@ref) macro. The macro expects a single begin-end block containing the connection command copied from VSCode.
