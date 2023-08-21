@@ -1,21 +1,33 @@
-using PlutoVSCodeDebugger
-using PlutoVSCodeDebugger: process_expr, check_pluto, send_to_debugger, open_file_vscode, method_location, vscedit, get_vscode, clean_err
+using PlutoVSCodeDebugger.WithFunctions
+using PlutoVSCodeDebugger: process_expr, check_pluto, send_to_debugger,
+open_file_vscode, method_location, vscedit, get_vscode, clean_err,
+connect_vscode, JULIAINTERPRETER_METHODS, has_docstring, maybe_add_docstrings, maybe_clean_vscode_module
 using Test
 
 
 @testset "PlutoVSCodeDebugger.jl" begin
     @test_throws "has not been loaded" get_vscode()
+    @test maybe_clean_vscode_module() === nothing # Goes on catch branch
 
     Base.eval(Main, :(module VSCodeServer
+
+        import JuliaInterpreter
         module JSONRPC
             send(args...) = nothing
             send_notification(args...) = nothing
         end
-        conn_endpoint = Ref(nothing)
+        conn_endpoint = Ref(IOBuffer())
         repl_open_file_notification_type = nothing
+
+        serve(args...; kwargs...) = nothing
     end))
 
+    @test maybe_clean_vscode_module(; close_endpoint = false) === nothing # Goes on else branch
+
     @test get_vscode() === Main.VSCodeServer
+
+    V = get_vscode()
+    endpoint = V.conn_endpoint
 
     file = @__FILE__
     ex = :(my_func(a.b, @__FILE__))
@@ -40,6 +52,7 @@ using Test
     @test open_file_vscode(mets) === nothing
 
     @test_logs (:info, r"is defined in Core") open_file_vscode(getfield)
+    @test_nowarn open_file_vscode(which(sum, (Int,)))
     @test_throws "$(typeof(3)) is not a valid input" open_file_vscode(3)
 
     @test method_location(first(methods(getfield))) === ("", 0) # This is in Core so it has no file/line
@@ -52,4 +65,21 @@ using Test
     fnametest = :(VSCodeServer.JSONRPC.send_notification)
     @test vscedit(fnametest) == :($open_file_vscode($fnametest))
 
+    @test isempty(breakpoints())
+    @breakpoint open_file_vscode(sum) y > 1
+    @test_logs (:info, r"is defined in Core") @breakpoint getfield(Main, :VSCodeServer) 0
+    @test !isempty(breakpoints())
+
+    connect_ex = quote
+        VSCodeServer.conn_endpoint[] = IOBuffer()
+        VSCodeServer.serve(raw"asd";)
+    end
+
+    @test all(x -> !has_docstring(getfield(PlutoVSCodeDebugger, x)), JULIAINTERPRETER_METHODS)
+    @test connect_vscode(connect_ex; skip_pluto_check = true) === "VSCode succesfully connected!"
+    @test all(x -> has_docstring(getfield(PlutoVSCodeDebugger, x)), JULIAINTERPRETER_METHODS)
+    @test isempty(breakpoints()) # The connect call above should have reset JuliaInterpreter
+    @test contains(connect_vscode(; skip_pluto_check = true).args[end], "CodeMirror?.setValue")
+    close(endpoint[])
+    @test_throws "Consider re-doing the connection" get_vscode()
 end

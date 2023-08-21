@@ -26,18 +26,18 @@ You can also use the exported [`@vscedit`](@ref) to jump at function definitions
 in VSCode from the Pluto notebook for convenience of setting up breakpoints.
 This function works similarly to the `@edit` macro from InteractiveUtils.
 """
-macro connect_vscode(block)
-    check_pluto() || return nothing
-    Meta.isexpr(block, (:block)) || clean_err("Please wrap the code copied from VSCode into a begin-end block.
-    You have to provide the VSCode External REPL command surrounded by a begin-end block to avoid macro parsing problems.")
-    # We execute the command in Main
-    Base.eval(Main, block)
-    try
-        get_vscode()
-        "VSCode succesfully connected"
-    catch
-        "The provided command does not seem to have loaded VSCode correctly."
-    end
+macro connect_vscode(args...)
+    connect_vscode(args...)
+end
+
+"""
+    @bp
+
+Insert a breakpoint at a location in the source code.
+"""
+macro bp()
+    JuliaInterpreter = get_vscode().JuliaInterpreter
+    :($JuliaInterpreter.@bp)
 end
 
 """
@@ -57,7 +57,7 @@ macro expansion.
 
 So, when ran with the following example code:
 ```julia
-@enter @othermacro args...
+@run @othermacro args...
 ```
 This macro will simply throw an error because the code to run directly contains another macro.
 
@@ -66,12 +66,12 @@ Breakpoints set in VSCode will be respected by the `@run` macro, exactly like it
 To simplify reaching the file position associated to a given function/method to
 put a breakpoint see the [`@vscedit`](@ref) macro also exported by this package.
 
-Functions that are defined inside the notebook directly can not have breakpoints
-as they do not have an associated file (they are just evaluated within the
-current Pluto module).
-
-For those functions, the only solution for the time being is using the
-[`@enter`](@ref) macro and stepping manually inside the functions call.
+Functions that are defined inside the notebook directly can only have
+breakpoints defined manually either with the [`@breakpoint`](@ref) or
+[`@bp`](@ref) macros.
+Breakpoints set up on the notebook file using the VSCode GUI will not be hit
+because Pluto modifies LineNumberNodes of the notebook functions so that they do
+not appear to be originating from the notebook file anymore at runtime.
 """
 macro run(command)
     check_pluto() || return nothing
@@ -128,4 +128,63 @@ See also: [`@connect_vscode`](@ref), [`@run`](@ref), [`@enter`](@ref)
 """
 macro vscedit(ex)
    vscedit(ex) |> esc
+end
+
+# The @breakpoint macro is taken verbatim from JuliaInterpreter, but reverts to the local definition of the `breakpoint` function
+"""
+    @breakpoint f(args...) condition=nothing
+    @breakpoint f(args...) line condition=nothing
+
+Break upon entry, or at the specified line number, in the method called by `f(args...)`.
+Optionally supply a condition expressed in terms of the arguments and internal variables
+of the method.
+If `line` is supplied, it must be a literal integer.
+
+# Example
+
+Suppose a method `mysum` is defined as follows, where the numbers to the left are the line
+number in the file:
+
+```
+12 function mysum(A)
+13     s = zero(eltype(A))
+14     for a in A
+15         s += a
+16     end
+17     return s
+18 end
+```
+
+Then
+
+```
+@breakpoint mysum(A) 15 s>10
+```
+
+would cause execution of the loop to break whenever `s>10`.
+"""
+macro breakpoint(call_expr, args...)
+    whichexpr = InteractiveUtils.gen_call_with_extracted_types(__module__, :which, call_expr)
+    haveline, line, condition = false, 0, nothing
+    while !isempty(args)
+        arg = first(args)
+        if isa(arg, Integer)
+            haveline, line = true, arg
+        else
+            condition = arg
+        end
+        args = Base.tail(args)
+    end
+    condexpr = condition === nothing ? nothing : esc(Expr(:quote, condition))
+    if haveline
+        return quote
+            local method = $whichexpr
+            $breakpoint(method, $line, $condexpr)
+        end
+    else
+        return quote
+            local method = $whichexpr
+            $breakpoint(method, $condexpr)
+        end
+    end
 end

@@ -1,10 +1,11 @@
 using PlutoVSCodeDebugger
 using Documenter
+import JuliaInterpreter
 
 DocMeta.setdocmeta!(PlutoVSCodeDebugger, :DocTestSetup, :(using PlutoVSCodeDebugger); recursive=true)
 
 makedocs(;
-    modules=[PlutoVSCodeDebugger],
+    modules=[PlutoVSCodeDebugger, JuliaInterpreter],
     authors="Alberto Mengali <disberd@gmail.com>",
     repo="https://github.com/disberd/PlutoVSCodeDebugger.jl/blob/{commit}{path}#{line}",
     sitename="PlutoVSCodeDebugger.jl",
@@ -15,6 +16,8 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
+        "Quick Start" => "examples.md",
+        "Exported Functions" => "public_api.md",
     ],
 )
 
