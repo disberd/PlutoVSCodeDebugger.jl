@@ -67,6 +67,7 @@ using Test
 
     @test isempty(breakpoints())
     @breakpoint open_file_vscode(sum) y > 1
+    @test_logs (:info, r"is defined in Core") @breakpoint getfield(Main, :VSCodeServer) 0
     @test !isempty(breakpoints())
 
     connect_ex = quote
