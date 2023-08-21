@@ -57,7 +57,7 @@ macro expansion.
 
 So, when ran with the following example code:
 ```julia
-@enter @othermacro args...
+@run @othermacro args...
 ```
 This macro will simply throw an error because the code to run directly contains another macro.
 
@@ -66,12 +66,12 @@ Breakpoints set in VSCode will be respected by the `@run` macro, exactly like it
 To simplify reaching the file position associated to a given function/method to
 put a breakpoint see the [`@vscedit`](@ref) macro also exported by this package.
 
-Functions that are defined inside the notebook directly can not have breakpoints
-as they do not have an associated file (they are just evaluated within the
-current Pluto module).
-
-For those functions, the only solution for the time being is using the
-[`@enter`](@ref) macro and stepping manually inside the functions call.
+Functions that are defined inside the notebook directly can only have
+breakpoints defined manually either with the [`@breakpoint`](@ref) or
+[`@bp`](@ref) macros.
+Breakpoints set up on the notebook file using the VSCode GUI will not be hit
+because Pluto modifies LineNumberNodes of the notebook functions so that they do
+not appear to be originating from the notebook file anymore at runtime.
 """
 macro run(command)
     check_pluto() || return nothing
