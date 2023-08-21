@@ -18,6 +18,8 @@ using Test
         end
         conn_endpoint = Ref(IOBuffer())
         repl_open_file_notification_type = nothing
+
+        serve(args...; kwargs...) = nothing
     end))
 
     @test maybe_clean_vscode_module(; close_endpoint = false) === nothing # Goes on else branch
@@ -66,11 +68,16 @@ using Test
     breakpoint(@__FILE__, 61)
     @test !isempty(breakpoints())
 
+    connect_ex = quote
+        VSCodeServer.conn_endpoint[] = IOBuffer()
+        VSCodeServer.serve(raw"asd";)
+    end
+
     @test all(x -> !has_docstring(getfield(PlutoVSCodeDebugger, x)), JULIAINTERPRETER_METHODS)
-    @test connect_vscode(:(begin VSCodeServer.conn_endpoint[] = IOBuffer() end); skip_pluto_check = true) === "VSCode succesfully connected!"
+    @test connect_vscode(connect_ex; skip_pluto_check = true) === "VSCode succesfully connected!"
     @test all(x -> has_docstring(getfield(PlutoVSCodeDebugger, x)), JULIAINTERPRETER_METHODS)
     @test isempty(breakpoints()) # The connect call above should have reset JuliaInterpreter
     @test contains(connect_vscode(; skip_pluto_check = true).args[end], "CodeMirror?.setValue")
     close(endpoint[])
-    @test_throws "Consider re-doing the connection" connect_vscode(:(begin end); skip_pluto_check = true)
+    @test_throws "Consider re-doing the connection" get_vscode()
 end

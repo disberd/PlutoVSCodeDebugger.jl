@@ -8,7 +8,7 @@ method_location(f::Function) = method_location(methods(f))
 
 function open_file_vscode(path::String, line::Int)
     if path === "" && line == 0
-        @info "The method `$(m.name)` is defined in Core, so it has no associated file."
+        @info "The provided method is defined in Core, so it has no associated file."
         return
     end
     VSCodeServer = get_vscode()
