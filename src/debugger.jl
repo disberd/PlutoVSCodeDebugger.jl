@@ -77,19 +77,63 @@ end
 
 ## JuliaInterpreter methods
 
-const JULIAINTERPRETER_METHODS = (:breakpoint, :breakpoints, :enable, :disable, :toggle, :remove)
+const JULIAINTERPRETER_METHODS = (:breakpoints, :enable, :disable, :toggle, :remove)
 
 for f in JULIAINTERPRETER_METHODS
-    pre_args = if f === :breakpoint
-        (:(file::AbstractString), :(line::Integer))
-    else
-        ()
-    end
     eval(quote
-        function $f($(pre_args...),args...)
+        function $f(args...)
             I = get_vscode(:JuliaInterpreter)
-            I.$f($(map(x -> first(x.args), pre_args)...), args...)
+            I.$f(args...)
         end
     end)
 end
+
+#= 
+For breakpoint we need to do a custom implementation as it seems only the
+file,line signature works. So we always revert to calling that method
+=#
+
+"""
+    breakpoint(file, line, [condition])
+
+Set a breakpoint in `file` at `line`. The argument `file` can be a filename, a partial path or absolute path.
+For example, `file = foo.jl` will match against all files with the name `foo.jl`,
+`file = src/foo.jl` will match against all paths containing `src/foo.jl`, e.g. both `Foo/src/foo.jl` and `Bar/src/foo.jl`.
+Absolute paths only matches against the file with that exact absolute path.
+"""
+function breakpoint(file::AbstractString, line::Integer, condition::Condition = nothing)
+    I = get_vscode(:JuliaInterpreter)
+    I.breakpoint(file, line, condition)
+end
+
+"""
+    breakpoint(m::Method, [line], [condition])
+
+Add a breakpoint to the file and line specified by method `m`.
+Optionally specify an absolute line number `line` in the source file; the default
+is to break upon entry at the first line of the body.
+Without `condition`, the breakpoint will be triggered every time it is encountered;
+the second only if `condition` evaluates to `true`.
+`condition` should be written in terms of the arguments and local variables of `m`.
+
+# Example
+```julia
+function radius2(x, y)
+    return x^2 + y^2
+end
+
+m = which(radius2, (Int, Int))
+breakpoint(m, :(y > x))
+```
+"""
+function breakpoint(m::Method, line::Integer = 0, condition::Condition = nothing)
+    file, linem = method_location(m)
+    if file === "" && linem == 0
+        @info "The provided method is defined in Core, so it has no associated file and no breakpoint can be added to it."
+        return
+    end
+    _line = line == 0 ? linem : line
+    breakpoint(file, _line, condition)
+end
+breakpoint(m::Method, condition::Condition) = breakpoint(m, 0, condition)
 

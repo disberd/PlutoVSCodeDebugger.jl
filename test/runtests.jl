@@ -52,6 +52,7 @@ using Test
     @test open_file_vscode(mets) === nothing
 
     @test_logs (:info, r"is defined in Core") open_file_vscode(getfield)
+    @test_nowarn open_file_vscode(which(sum, (Int,)))
     @test_throws "$(typeof(3)) is not a valid input" open_file_vscode(3)
 
     @test method_location(first(methods(getfield))) === ("", 0) # This is in Core so it has no file/line
@@ -65,7 +66,7 @@ using Test
     @test vscedit(fnametest) == :($open_file_vscode($fnametest))
 
     @test isempty(breakpoints())
-    breakpoint(@__FILE__, 61)
+    @breakpoint open_file_vscode(sum) y > 1
     @test !isempty(breakpoints())
 
     connect_ex = quote

@@ -129,3 +129,62 @@ See also: [`@connect_vscode`](@ref), [`@run`](@ref), [`@enter`](@ref)
 macro vscedit(ex)
    vscedit(ex) |> esc
 end
+
+# The @breakpoint macro is taken verbatim from JuliaInterpreter, but reverts to the local definition of the `breakpoint` function
+"""
+    @breakpoint f(args...) condition=nothing
+    @breakpoint f(args...) line condition=nothing
+
+Break upon entry, or at the specified line number, in the method called by `f(args...)`.
+Optionally supply a condition expressed in terms of the arguments and internal variables
+of the method.
+If `line` is supplied, it must be a literal integer.
+
+# Example
+
+Suppose a method `mysum` is defined as follows, where the numbers to the left are the line
+number in the file:
+
+```
+12 function mysum(A)
+13     s = zero(eltype(A))
+14     for a in A
+15         s += a
+16     end
+17     return s
+18 end
+```
+
+Then
+
+```
+@breakpoint mysum(A) 15 s>10
+```
+
+would cause execution of the loop to break whenever `s>10`.
+"""
+macro breakpoint(call_expr, args...)
+    whichexpr = InteractiveUtils.gen_call_with_extracted_types(__module__, :which, call_expr)
+    haveline, line, condition = false, 0, nothing
+    while !isempty(args)
+        arg = first(args)
+        if isa(arg, Integer)
+            haveline, line = true, arg
+        else
+            condition = arg
+        end
+        args = Base.tail(args)
+    end
+    condexpr = condition === nothing ? nothing : esc(Expr(:quote, condition))
+    if haveline
+        return quote
+            local method = $whichexpr
+            $breakpoint(method, $line, $condexpr)
+        end
+    else
+        return quote
+            local method = $whichexpr
+            $breakpoint(method, $condexpr)
+        end
+    end
+end

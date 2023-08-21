@@ -16,7 +16,7 @@ function open_file_vscode(path::String, line::Int)
     JSONRPC.send(conn_endpoint[], repl_open_file_notification_type, (; path, line))
     nothing
 end
-open_file_vscode(m::Method) = open_file_vscode(method_location(m))
+open_file_vscode(m::Method) = open_file_vscode(method_location(m)...)
 open_file_vscode(ml_or_f::Union{Base.MethodList, Function}) = open_file_vscode(first(method_location(ml_or_f))...)
 open_file_vscode(x) = error("The provided type $(typeof(x)) is not a valid input for `open_file_vscode`")
 
