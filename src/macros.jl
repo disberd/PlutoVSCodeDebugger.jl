@@ -30,6 +30,11 @@ macro connect_vscode(args...)
     connect_vscode(args...)
 end
 
+"""
+    @bp
+
+Insert a breakpoint at a location in the source code.
+"""
 macro bp()
     JuliaInterpreter = get_vscode().JuliaInterpreter
     :($JuliaInterpreter.@bp)

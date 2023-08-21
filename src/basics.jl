@@ -16,6 +16,15 @@ else
 end
 get_vscode(s::Symbol; kwargs...) = getfield(get_vscode(;kwargs...), s)
 
+# Get the VSCode socket location from the connect expression
+function socket_from_exp(ex::Expr)
+    ex.head === :block || error("This function only supports a begin-end block as input expression")
+    out = split(string(ex), r"serve\(raw\"|\";")
+    length(out) === 3 || error("The socket path was not found in the given expression")
+    return out[2]
+end
+has_same_socket(ex) = socket_from_exp(ex) === CURRENT_SOCKET[]
+
 function maybe_clean_vscode_module(; close_endpoint = true)
     # We empty the list of breakpoints and breakpoints hooks
     try
@@ -56,16 +65,21 @@ function maybe_add_docstrings()
     end
 end
 
+
+
 function connect_vscode(block; skip_pluto_check = false)
     skip_pluto_check || check_pluto() || return nothing
     Meta.isexpr(block, (:block)) || clean_err("Please wrap the code copied from VSCode into a begin-end block.
     You have to provide the VSCode External REPL command surrounded by a begin-end block to avoid macro parsing problems.")
+    # Check if an actual expression was provided
+    any(x -> !isa(x, LineNumberNode), block.args) || return "Please provide the expression to connect to VSCode"
     # We try to clean the maybe existing VSCodeServer module
-    maybe_clean_vscode_module()
+    maybe_clean_vscode_module(; close_endpoint = !has_same_socket(block))
     # We execute the command in Main
     Base.eval(Main, block)
     out = try
         get_vscode()
+        CURRENT_SOCKET[] = socket_from_exp(block)
         "VSCode succesfully connected!"
     catch
         rethrow()
