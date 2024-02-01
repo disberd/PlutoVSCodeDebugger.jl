@@ -4,6 +4,8 @@ using AbstractPlutoDingetjes
 import REPL
 import Markdown
 import InteractiveUtils
+using ExpressionExplorer
+using ExpressionExplorer: is_function_assignment, explore_funcdef!, canonalize, ScopeState
 
 export @run, @enter, @connect_vscode, @vscedit, @bp, @breakpoint
 
@@ -17,6 +19,7 @@ include("basics.jl")
 include("file_locations.jl")
 include("debugger.jl")
 include("macros.jl")
+include("additional_stuff.jl")
 
 # This module just re-export the main module plus the debgging functions of JuliaInterpreter
 module WithFunctions
