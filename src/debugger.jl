@@ -53,6 +53,8 @@ function remove_lln!(ex::Expr)
 end
 
 function process_expr(command, _mod, _file)
+    # 
+    notebook_code_module(_file, _mod; eval = true)
     remove_lln!(command)
     try_replace_macros!(command; _mod, _file)
     _names = Set{Symbol}()
@@ -61,13 +63,14 @@ function process_expr(command, _mod, _file)
         command
     else
         :(let 
-            (;$(_names...)) = $_mod
+            (;$(_names...)) = Main._NotebookCode_
             $command
         end)
     end
     remove_lln!(code)
     code
 end
+
 
 function send_to_debugger(method; code, filename)
     VSCodeServer = get_vscode()
