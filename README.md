@@ -5,6 +5,9 @@
 [![Build Status](https://github.com/disberd/PlutoVSCodeDebugger.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/disberd/PlutoVSCodeDebugger.jl/actions/workflows/CI.yml?query=branch%3Amain)
 [![Coverage](https://codecov.io/gh/disberd/PlutoVSCodeDebugger.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/disberd/PlutoVSCodeDebugger.jl)
 
+> [!WARNING]
+> This package needs to be updated to adapt to the new breaking changes in VSCode debugger (https://github.com/julia-vscode/DebugAdapter.jl/pull/74).
+
 This package provides a very experimental connection between a Pluto Notebook
 and the Debugger on a running VSCode instance (the VSCode instance must be
 running on the same machine as the Pluto Server)
